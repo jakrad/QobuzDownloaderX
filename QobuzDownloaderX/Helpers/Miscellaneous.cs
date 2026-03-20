@@ -24,9 +24,7 @@ namespace QobuzDownloaderX.Helpers
         [DebuggerStepThrough]
         internal static void SetTLSSetting()
         {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls
-                                                 | SecurityProtocolType.Tls11
-                                                 | SecurityProtocolType.Tls12;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             if (Settings.Default.useTLS13)
             {
@@ -384,7 +382,7 @@ namespace QobuzDownloaderX.Helpers
         {
             // Set saved language
             f.languageManager = new LanguageManager();
-            f.languageManager.LoadLanguage($"languages/{Settings.Default.currentLanguage.ToLower()}.json");
+            f.languageManager.LoadLanguage(Path.Combine(f.languageManager.languagesDirectory, Settings.Default.currentLanguage.ToLower() + ".json"));
 
             // Populate theme options in settings
             f.languageManager.PopulateLanguageComboBox(f);

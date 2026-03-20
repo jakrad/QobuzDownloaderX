@@ -1,4 +1,4 @@
-﻿using QobuzDownloaderX.Helpers;
+using QobuzDownloaderX.Helpers;
 using QobuzDownloaderX.Properties;
 using QopenAPI;
 using System;
@@ -31,6 +31,101 @@ namespace QobuzDownloaderX
         // readonly FixMD5 fixMD5 = new FixMD5(); // UNUSED
 
         public void clearOutputText() => getInfo.outputText = null;
+
+        private sealed class ResolvedStreamSelection
+        {
+            public QopenAPI.Stream Stream { get; set; }
+            public string EffectiveFormatId { get; set; }
+            public string EffectiveAudioFormat { get; set; }
+            public int? EffectiveBitDepth { get; set; }
+            public double? EffectiveSamplingRate { get; set; }
+        }
+
+        private static string[] GetFormatFallbackChain(string requestedFormatId)
+        {
+            switch (requestedFormatId)
+            {
+                case "27":
+                    return new[] { "27", "7", "6" };
+                case "7":
+                    return new[] { "7", "6" };
+                case "6":
+                case "5":
+                    return new[] { requestedFormatId };
+                default:
+                    return new[] { requestedFormatId };
+            }
+        }
+
+        private static string GetAudioFormatFromMimeType(string mimeType, string fallbackAudioFormat)
+        {
+            if (mimeType != null)
+            {
+                if (mimeType.IndexOf("flac", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return ".flac";
+                }
+
+                if (mimeType.IndexOf("mpeg", StringComparison.OrdinalIgnoreCase) >= 0
+                    || mimeType.IndexOf("mp3", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return ".mp3";
+                }
+            }
+
+            return fallbackAudioFormat;
+        }
+
+        private ResolvedStreamSelection ResolveBestAvailableStream(string app_id, string requestedFormatId, string user_auth_token, string app_secret, Item qoItem, string fallbackAudioFormat)
+        {
+            foreach (string candidateFormatId in GetFormatFallbackChain(requestedFormatId))
+            {
+                try
+                {
+                    var qoStream = QoService.TrackGetFileUrl(qoItem.Id.ToString(), candidateFormatId, app_id, user_auth_token, app_secret);
+                    if (qoStream == null || string.IsNullOrWhiteSpace(qoStream.StreamURL))
+                    {
+                        continue;
+                    }
+
+                    SecurityHelpers.RequireHttpsUrl(qoStream.StreamURL, "Stream");
+
+                    int? bitDepth = SecurityHelpers.TryParseInt(qoStream.BitDepth, out int parsedBitDepth)
+                        ? parsedBitDepth
+                        : (int?)null;
+
+                    double? samplingRate = SecurityHelpers.TryParseDouble(qoStream.SampleRate, out double parsedSampleRate)
+                        ? parsedSampleRate
+                        : (double?)null;
+
+                    string effectiveFormatId = qoStream.FormatID > 0
+                        ? qoStream.FormatID.ToString()
+                        : candidateFormatId;
+
+                    if (!string.Equals(effectiveFormatId, requestedFormatId, StringComparison.Ordinal))
+                    {
+                        qbdlxForm._qbdlxForm.logger.Warning(
+                            $"Requested format {requestedFormatId} was unavailable for track {qoItem.Id}; using format {effectiveFormatId} instead.");
+                    }
+
+                    return new ResolvedStreamSelection
+                    {
+                        Stream = qoStream,
+                        EffectiveFormatId = effectiveFormatId,
+                        EffectiveAudioFormat = GetAudioFormatFromMimeType(qoStream.MimeType, fallbackAudioFormat),
+                        EffectiveBitDepth = bitDepth,
+                        EffectiveSamplingRate = samplingRate
+                    };
+                }
+                catch (Exception ex)
+                {
+                    qbdlxForm._qbdlxForm.logger.Warning(
+                        $"Failed to resolve track stream for track {qoItem.Id} with format {candidateFormatId}: {ex.Message}");
+                }
+            }
+
+            return null;
+        }
 
         private bool VerifyStreamable(Item QoItem, int paddedTrackLength)
         {
@@ -74,11 +169,11 @@ namespace QobuzDownloaderX
             }
         }
 
-        private async Task DownloadAndSaveTrack(string downloadType, string app_id, string format_id, string user_auth_token, string app_secret, Album QoAlbum, Item QoItem, Playlist QoPlaylist, string downloadPath, string filePath, string audio_format, int paddedTrackLength, DownloadStats stats, CancellationToken abortToken)
+        private async Task DownloadAndSaveTrack(string downloadType, ResolvedStreamSelection resolvedStream, Album QoAlbum, Item QoItem, Playlist QoPlaylist, string downloadPath, string filePath, int paddedTrackLength, DownloadStats stats, CancellationToken abortToken)
         {
-            var QoStream = QoService.TrackGetFileUrl(QoItem.Id.ToString(), format_id, app_id, user_auth_token, app_secret);
-            string streamURL = QoStream?.StreamURL;
-            if (string.IsNullOrWhiteSpace(streamURL)) {
+            string streamURL = resolvedStream?.Stream?.StreamURL;
+            if (string.IsNullOrWhiteSpace(streamURL))
+            {
                 string msg = $"{qbdlxForm._qbdlxForm.downloadOutputNoUrl.Replace("{TrackNumber}", QoItem.TrackNumber.ToString().PadLeft(paddedTrackLength, '0'))}\r\n";
                 getInfo.updateDownloadOutput(msg);
                 Miscellaneous.LogNotDownloadableTrackEntry(downloadPath, QoItem, msg);
@@ -98,7 +193,7 @@ namespace QobuzDownloaderX
             if (abortToken.IsCancellationRequested) { abortToken.ThrowIfCancellationRequested(); }
 
             // Download stream
-            await downloadFile.DownloadStream(downloadType, streamURL, downloadPath, filePath, audio_format, QoAlbum, QoItem, getInfo, abortToken, stats);
+            await downloadFile.DownloadStream(downloadType, streamURL, downloadPath, filePath, resolvedStream.EffectiveAudioFormat, QoAlbum, QoItem, getInfo, abortToken, stats);
         }
 
         public async Task DownloadTrackAsync(string downloadType, string app_id, string album_id, string format_id, string audio_format, string user_auth_token, string app_secret, string downloadLocation, string artistTemplate, string albumTemplate, string trackTemplate, Album QoAlbum, Item QoItem, IProgress<int> progress, DownloadStats stats, CancellationToken abortToken)
@@ -143,14 +238,52 @@ namespace QobuzDownloaderX
                     try { if (!VerifyStreamable(QoItem, paddedTrackLength)) { progress?.Report(100); return; } }
                     catch (Exception ex) { qbdlxForm._qbdlxForm.logger.Error($"Unable to verify if track is streamable. Error below:\r\n{ex}"); }
 
-                    // Setting up download and file path
-                    downloadPath = await downloadFile.createPath(downloadLocation, artistTemplate, albumTemplate, trackTemplate, null, null, paddedTrackLength, paddedDiscLength, QoAlbum, QoItem, null);
+                    ResolvedStreamSelection resolvedStream = ResolveBestAvailableStream(app_id, format_id, user_auth_token, app_secret, QoItem, audio_format);
+                    if (resolvedStream == null)
+                    {
+                        string msg = $"{qbdlxForm._qbdlxForm.downloadOutputNoUrl.Replace("{TrackNumber}", QoItem.TrackNumber.ToString().PadLeft(paddedTrackLength, '0'))}\r\n";
+                        getInfo.updateDownloadOutput(msg);
+                        Miscellaneous.LogNotDownloadableTrackEntry(downloadLocation, QoItem, msg);
+                        qbdlxForm._qbdlxForm.logger.Error(msg);
+                        progress?.Report(100);
+                        return;
+                    }
 
-                    string trackTemplateConverted = renameTemplates.renameTemplates(trackTemplate, paddedTrackLength, paddedDiscLength, audio_format, QoAlbum, QoItem, null);
+                    string effectiveAudioFormat = resolvedStream.EffectiveAudioFormat ?? audio_format;
+
+                    // Setting up download and file path
+                    downloadPath = await downloadFile.createPath(
+                        downloadLocation,
+                        artistTemplate,
+                        albumTemplate,
+                        trackTemplate,
+                        null,
+                        null,
+                        paddedTrackLength,
+                        paddedDiscLength,
+                        QoAlbum,
+                        QoItem,
+                        null,
+                        downloadType == "track" ? resolvedStream.EffectiveFormatId : null,
+                        downloadType == "track" ? resolvedStream.EffectiveBitDepth : null,
+                        downloadType == "track" ? resolvedStream.EffectiveSamplingRate : null);
+
+                    string trackTemplateConverted = renameTemplates.renameTemplates(
+                        trackTemplate,
+                        paddedTrackLength,
+                        paddedDiscLength,
+                        effectiveAudioFormat,
+                        QoAlbum,
+                        QoItem,
+                        null,
+                        resolvedStream.EffectiveFormatId,
+                        resolvedStream.EffectiveBitDepth,
+                        resolvedStream.EffectiveSamplingRate);
 
                     if (trackTemplateConverted.Contains(@"\"))
                     {
-                        downloadPath = downloadPath + trackTemplateConverted.Substring(0, trackTemplateConverted.LastIndexOf(@"\")) + @"\";
+                        string trackSubDirectory = trackTemplateConverted.Substring(0, trackTemplateConverted.LastIndexOf(@"\"));
+                        downloadPath = SecurityHelpers.EnsureTrailingDirectorySeparator(SecurityHelpers.EnsurePathIsWithinRoot(downloadLocation, Path.Combine(downloadPath, trackSubDirectory), nameof(downloadPath)));
                         trackTemplateConverted = trackTemplateConverted.Substring(trackTemplateConverted.LastIndexOf(@"\") + 1);
                         Debug.WriteLine(downloadPath);
                     }
@@ -159,14 +292,15 @@ namespace QobuzDownloaderX
                     if (!(downloadType == "track") && QoAlbum.MediaCount > 1 && (!string.IsNullOrWhiteSpace(Settings.Default.savedCdTemplate)))
                     {
                         string cdDirectoryName = qbdlxForm.discNumberRegex.Replace(Settings.Default.savedCdTemplate, QoItem.MediaNumber.ToString());
-                        filePath = downloadPath + cdDirectoryName + ZlpPathHelper.DirectorySeparatorChar + trackTemplateConverted.TrimEnd() + audio_format;
+                        filePath = Path.Combine(downloadPath, cdDirectoryName, trackTemplateConverted.TrimEnd() + effectiveAudioFormat);
                         // Previous, original logic:
                         // filePath = downloadPath + "CD " + QoItem.MediaNumber.ToString().PadLeft(paddedDiscLength, '0') + ZlpPathHelper.DirectorySeparatorChar + trackTemplateConverted.TrimEnd() + audio_format;
                     }
                     else
                     {
-                        filePath = downloadPath + trackTemplateConverted.TrimEnd() + audio_format;
+                        filePath = Path.Combine(downloadPath, trackTemplateConverted.TrimEnd() + effectiveAudioFormat);
                     }
+                    filePath = SecurityHelpers.EnsurePathIsWithinRoot(downloadLocation, filePath, nameof(filePath));
 
                     if (qbdlxForm.duplicateFileMode == DuplicateFileMode.SkipDownloads)
                     {
@@ -182,7 +316,7 @@ namespace QobuzDownloaderX
                     try { await downloadFile.DownloadArtwork(downloadPath, QoAlbum); } catch (Exception ex) { qbdlxForm._qbdlxForm.logger.Error($"Failed to Download Cover Art. Error below:\r\n{ex}"); }
 
                     // Download and Save Track
-                    await DownloadAndSaveTrack(downloadType, app_id, format_id, user_auth_token, app_secret, QoAlbum, QoItem, null, downloadPath, filePath, audio_format, paddedTrackLength, stats, abortToken);
+                    await DownloadAndSaveTrack(downloadType, resolvedStream, QoAlbum, QoItem, null, downloadPath, filePath, paddedTrackLength, stats, abortToken);
 
                     if (abortToken.IsCancellationRequested) { abortToken.ThrowIfCancellationRequested(); }
                     progress?.Report(100);
@@ -203,7 +337,8 @@ namespace QobuzDownloaderX
                 }
                 finally
                 {
-                    if (!(downloadType == "album")){
+                    if (!(downloadType == "album"))
+                    {
                         // Delete image used for embedded artwork
                         Miscellaneous.DeleteTempEmbeddedArtwork();
                     }
@@ -228,19 +363,43 @@ namespace QobuzDownloaderX
 
                 try
                 {
+                    ResolvedStreamSelection resolvedStream = ResolveBestAvailableStream(app_id, format_id, user_auth_token, app_secret, QoItem, audio_format);
+                    if (resolvedStream == null)
+                    {
+                        string msg = $"{qbdlxForm._qbdlxForm.downloadOutputNoUrl.Replace("{TrackNumber}", QoItem.TrackNumber.ToString().PadLeft(paddedTrackLength, '0'))}\r\n";
+                        getInfo.updateDownloadOutput(msg);
+                        Miscellaneous.LogNotDownloadableTrackEntry(downloadLocation, QoItem, msg);
+                        qbdlxForm._qbdlxForm.logger.Error(msg);
+                        progress?.Report(100);
+                        return;
+                    }
+
+                    string effectiveAudioFormat = resolvedStream.EffectiveAudioFormat ?? audio_format;
+
                     // Setting up download and file path
                     downloadPath = await downloadFile.createPath(downloadLocation, null, null, trackTemplate, playlistTemplate, null, paddedTrackLength, paddedDiscLength, QoAlbum, QoItem, QoPlaylist);
-                    string trackTemplateConverted = renameTemplates.renameTemplates(trackTemplate, paddedTrackLength, paddedDiscLength, audio_format, QoAlbum, QoItem, QoPlaylist);
+                    string trackTemplateConverted = renameTemplates.renameTemplates(
+                        trackTemplate,
+                        paddedTrackLength,
+                        paddedDiscLength,
+                        effectiveAudioFormat,
+                        QoAlbum,
+                        QoItem,
+                        QoPlaylist,
+                        resolvedStream.EffectiveFormatId,
+                        resolvedStream.EffectiveBitDepth,
+                        resolvedStream.EffectiveSamplingRate);
 
                     if (trackTemplateConverted.Contains(@"\"))
                     {
-                        downloadPath = downloadPath + trackTemplateConverted.Substring(0, trackTemplateConverted.LastIndexOf(@"\")) + @"\";
+                        string trackSubDirectory = trackTemplateConverted.Substring(0, trackTemplateConverted.LastIndexOf(@"\"));
+                        downloadPath = SecurityHelpers.EnsureTrailingDirectorySeparator(SecurityHelpers.EnsurePathIsWithinRoot(downloadLocation, Path.Combine(downloadPath, trackSubDirectory), nameof(downloadPath)));
                         trackTemplateConverted = trackTemplateConverted.Substring(trackTemplateConverted.LastIndexOf(@"\") + 1);
                         Debug.WriteLine(downloadPath);
                     }
 
-                    filePath = downloadPath + trackTemplateConverted.TrimEnd() + audio_format;
-
+                    filePath = Path.Combine(downloadPath, trackTemplateConverted.TrimEnd() + effectiveAudioFormat);
+                    filePath = SecurityHelpers.EnsurePathIsWithinRoot(downloadLocation, filePath, nameof(filePath));
 
                     if (qbdlxForm.duplicateFileMode == DuplicateFileMode.SkipDownloads)
                     {
@@ -260,7 +419,7 @@ namespace QobuzDownloaderX
                     catch { }
 
                     // Download and Save Track
-                    await DownloadAndSaveTrack(downloadType, app_id, format_id, user_auth_token, app_secret, QoAlbum, QoItem, QoPlaylist, downloadPath, filePath, audio_format, paddedTrackLength, stats, abortToken);
+                    await DownloadAndSaveTrack(downloadType, resolvedStream, QoAlbum, QoItem, QoPlaylist, downloadPath, filePath, paddedTrackLength, stats, abortToken);
 
                     // Delete image used for embedded artwork
                     CleanupArtwork();
