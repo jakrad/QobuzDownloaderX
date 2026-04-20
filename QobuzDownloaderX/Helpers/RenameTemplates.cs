@@ -247,7 +247,7 @@ namespace QobuzDownloaderX.Helpers
             {
                 int albumBitDepth = effectiveBitDepth ?? QoAlbum.MaximumBitDepth;
                 double albumSamplingRate = effectiveSamplingRate ?? QoAlbum.MaximumSamplingRate;
-                //
+                
                 template = ReplaceParentalWarningTags(template, QoAlbum.ParentalWarning);
                 template = template
                     .Replace("%albumid%", QoAlbum.Id?.ToString() ?? "")
