@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Windows.Forms;
 using ZetaLongPaths;
 
@@ -370,7 +369,7 @@ namespace QobuzDownloaderX.Helpers
     internal sealed class LanguageManager
     {
         private Dictionary<string, string> languageDictionary;
-        public string languagesDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "languages");
+        public string languagesDirectory = "languages";
 
         // Default English translation if no files are avaialble
         public const string defaultLanguage = @"{

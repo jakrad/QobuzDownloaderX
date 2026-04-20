@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace QobuzDownloaderX.Helpers
 {
@@ -18,16 +17,6 @@ namespace QobuzDownloaderX.Helpers
         public QopenAPI.Label QoLabel = new QopenAPI.Label();
 
         public string outputText { get; set; }
-        public CancellationToken UiCancellationToken { get; set; } = CancellationToken.None;
-
-        private bool CanUpdateUi()
-        {
-            return !UiCancellationToken.IsCancellationRequested
-                && qbdlxForm._qbdlxForm != null
-                && !qbdlxForm._qbdlxForm.IsDisposed
-                && qbdlxForm._qbdlxForm.downloadOutput != null
-                && !qbdlxForm._qbdlxForm.downloadOutput.IsDisposed;
-        }
 
         public HashSet<string> GetArtistReleaseTypeIds(string app_id, string artist_id, string selectedTypes, string user_auth_token)
         {
@@ -456,12 +445,7 @@ namespace QobuzDownloaderX.Helpers
 
         public void updateDownloadOutput(string text)
         {
-            if (!CanUpdateUi())
-            {
-                return;
-            }
-
-            if (outputText == "Test String" || outputText == null)
+            if (outputText == "Test String" | outputText == null)
             {
                 Miscellaneous.update(qbdlxForm._qbdlxForm, null);
                 outputText = qbdlxForm._qbdlxForm.downloadOutput.Text;

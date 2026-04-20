@@ -178,10 +178,9 @@ namespace QobuzDownloaderX
         internal qbdlxForm()
         {
             // Create new log file
-            string logsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
-            Directory.CreateDirectory(logsDirectory);
+            Directory.CreateDirectory("logs");
 
-            logger = new BufferedLogger(Path.Combine(logsDirectory, "QobuzDLX " + DateTime.Now.ToString("yyyy⧸MM⧸dd HH꞉mm꞉ss") + ".log"));
+            logger = new BufferedLogger("logs\\QobuzDLX " + DateTime.Now.ToString("yyyy⧸MM⧸dd HH꞉mm꞉ss") + ".log");
             logger.Debug("Logger started, QBDLX form initialized!");
 
             InitializeComponent();

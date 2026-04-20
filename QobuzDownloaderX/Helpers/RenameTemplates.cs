@@ -4,7 +4,6 @@ using QopenAPI;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -163,20 +162,9 @@ namespace QobuzDownloaderX.Helpers
         }
 
         [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "I don’t feel like changing this and it doesn’t matter")]
-        public string renameTemplates(
-            string template,
-            int paddedTrackLength,
-            int paddedDiscLength,
-            string fileFormat,
-            Album QoAlbum,
-            Item QoItem,
-            Playlist QoPlaylist,
-            string effectiveFormatId = null,
-            int? effectiveBitDepth = null,
-            double? effectiveSamplingRate = null)
+        public string renameTemplates(string template, int paddedTrackLength, int paddedDiscLength, string fileFormat, Album QoAlbum, Item QoItem, Playlist QoPlaylist)
         {
             qbdlxForm._qbdlxForm.logger.Debug("Renaming user template - " + template);
-            string selectedFormatId = effectiveFormatId ?? qbdlxForm._qbdlxForm.format_id;
 
             // Convert all text between % symbols to lowercase
             template = percentRegex.Replace(template, match => match.Value.ToLower());
@@ -193,16 +181,10 @@ namespace QobuzDownloaderX.Helpers
             // Track Templates
             if (QoItem != null)
             {
-                int trackBitDepth = effectiveBitDepth ?? QoItem.MaximumBitDepth;
-                double trackSamplingRate = effectiveSamplingRate ?? QoItem.MaximumSamplingRate;
-
                 if (QoAlbum != null)
                 {
                     string artistsNames = GetReleaseArtists(QoAlbum, updateAlbumInfoLabels: false) ?? "";
-                    bool isPlaylistDirectoryTemplate = QoPlaylist != null
-                        && template.IndexOf("%playlist", StringComparison.OrdinalIgnoreCase) >= 0;
-                    if (!isPlaylistDirectoryTemplate
-                        && variousArtistsNames.Any(name => artistsNames.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    if (variousArtistsNames.Any(name => artistsNames.Equals(name, StringComparison.OrdinalIgnoreCase)))
                     {
                         // Convert all text between % symbols to lowercase
                         template = percentRegex.Replace(Settings.Default.savedVaTrackTemplate, match => match.Value.ToLower());
@@ -217,8 +199,8 @@ namespace QobuzDownloaderX.Helpers
                     .Replace("%trackcomposer%", QoItem?.Composer?.Name?.ToString())
                     .Replace("%tracknumber%", QoItem.TrackNumber.ToString().PadLeft(paddedTrackLength, '0'))
                     .Replace("%isrc%", QoItem.ISRC.ToString())
-                    .Replace("%trackbitdepth%", trackBitDepth.ToString(CultureInfo.InvariantCulture))
-                    .Replace("%tracksamplerate%", trackSamplingRate.ToString("0.###", CultureInfo.InvariantCulture));
+                    .Replace("%trackbitdepth%", QoItem.MaximumBitDepth.ToString())
+                    .Replace("%tracksamplerate%", QoItem.MaximumSamplingRate.ToString());
 
                 string titleFormatted = QoItem.Version == null
                                         ? QoItem.Title
@@ -239,15 +221,12 @@ namespace QobuzDownloaderX.Helpers
 
                 // Track Format Templates
                 template = template.Replace("%trackformat%", fileFormat.ToUpper().TrimStart('.'));
-                template = RenameFormatTemplate(template, selectedFormatId, fileFormat, trackBitDepth, trackSamplingRate, "%trackformatwithhiresquality%", "%trackformatwithquality%");
+                template = RenameFormatTemplate(template, qbdlxForm._qbdlxForm.format_id, fileFormat, QoItem.MaximumBitDepth, QoItem.MaximumSamplingRate, "%trackformatwithhiresquality%", "%trackformatwithquality%");
             }
 
             // Album Templates
             if (QoAlbum != null)
             {
-                int albumBitDepth = effectiveBitDepth ?? QoAlbum.MaximumBitDepth;
-                double albumSamplingRate = effectiveSamplingRate ?? QoAlbum.MaximumSamplingRate;
-
                 template = ReplaceParentalWarningTags(template, QoAlbum.ParentalWarning);
                 template = template
                     .Replace("%albumid%", QoAlbum.Id?.ToString() ?? "")
@@ -261,26 +240,16 @@ namespace QobuzDownloaderX.Helpers
                     .Replace("%releasedate%", QoAlbum.ReleaseDateOriginal?.Trim() ?? "")
                     .Replace("%year%", UInt32.Parse(QoAlbum.ReleaseDateOriginal?.Trim()?.Substring(0, 4)).ToString() ?? "")
                     .Replace("%releasetype%", char.ToUpper(QoAlbum.ProductType.FirstOrDefault()) + QoAlbum.ProductType?.Substring(1)?.ToLower())
-                    .Replace("%bitdepth%", albumBitDepth.ToString(CultureInfo.InvariantCulture))
-                    .Replace("%samplerate%", albumSamplingRate.ToString("0.###", CultureInfo.InvariantCulture))
+                    .Replace("%bitdepth%", QoAlbum.MaximumBitDepth.ToString() ?? "")
+                    .Replace("%samplerate%", QoAlbum.MaximumSamplingRate.ToString() ?? "")
                     .Replace("%albumtitle%", QoAlbum.Version == null ? QoAlbum.Title : $"{QoAlbum.Title?.TrimEnd()} ({QoAlbum.Version})")
                     .Replace("%format%", fileFormat.ToUpper().TrimStart('.'));
             }
 
             if (QoPlaylist == null)
             {
-                if (QoAlbum != null)
-                {
-                    // Release Format Templates
-                    template = RenameFormatTemplate(
-                        template,
-                        selectedFormatId,
-                        fileFormat,
-                        effectiveBitDepth ?? QoAlbum.MaximumBitDepth,
-                        effectiveSamplingRate ?? QoAlbum.MaximumSamplingRate,
-                        "%formatwithhiresquality%",
-                        "%formatwithquality%");
-                }
+                // Release Format Templates
+                template = RenameFormatTemplate(template, qbdlxForm._qbdlxForm.format_id, fileFormat, QoAlbum.MaximumBitDepth, QoAlbum.MaximumSamplingRate, "%formatwithhiresquality%", "%formatwithquality%");
             }
             else
             {
@@ -288,16 +257,9 @@ namespace QobuzDownloaderX.Helpers
                 template = template
                     .Replace("%playlistid%", QoPlaylist.Id.ToString())
                     .Replace("%playlisttitle%", QoPlaylist.Name)
-                    .Replace("%format%", fileFormat.ToUpper().TrimStart('.'));
-
-                template = RenameFormatTemplate(
-                    template,
-                    selectedFormatId,
-                    fileFormat,
-                    effectiveBitDepth ?? QoItem?.MaximumBitDepth ?? QoAlbum?.MaximumBitDepth ?? 0,
-                    effectiveSamplingRate ?? QoItem?.MaximumSamplingRate ?? QoAlbum?.MaximumSamplingRate ?? 0,
-                    "%formatwithhiresquality%",
-                    "%formatwithquality%");
+                    .Replace("%format%", fileFormat.ToUpper().TrimStart('.'))
+                    .Replace("%formatwithhiresquality%", fileFormat.ToUpper().TrimStart('.'))
+                    .Replace("%formatwithquality%", fileFormat.ToUpper().TrimStart('.')); 
 
                 if (QoItem != null)
                 {
@@ -314,8 +276,8 @@ namespace QobuzDownloaderX.Helpers
                         .Replace("%releasedate%", QoAlbum.ReleaseDateOriginal?.Trim() ?? "")
                         .Replace("%year%", UInt32.Parse(QoAlbum.ReleaseDateOriginal?.Trim()?.Substring(0, 4)).ToString() ?? "")
                         .Replace("%releasetype%", char.ToUpper(QoAlbum.ProductType.FirstOrDefault()) + QoAlbum.ProductType?.Substring(1)?.ToLower())
-                        .Replace("%bitdepth%", (effectiveBitDepth ?? QoAlbum.MaximumBitDepth).ToString(CultureInfo.InvariantCulture))
-                        .Replace("%samplerate%", (effectiveSamplingRate ?? QoAlbum.MaximumSamplingRate).ToString("0.###", CultureInfo.InvariantCulture))
+                        .Replace("%bitdepth%", QoAlbum.MaximumBitDepth.ToString() ?? "")
+                        .Replace("%samplerate%", QoAlbum.MaximumSamplingRate.ToString() ?? "")
                         .Replace("%albumtitle%", QoAlbum.Version == null ? QoAlbum.Title : $"{QoAlbum.Title?.TrimEnd()} ({QoAlbum.Version})")
                         .Replace("%format%", fileFormat.ToUpper().TrimStart('.'));
                 }

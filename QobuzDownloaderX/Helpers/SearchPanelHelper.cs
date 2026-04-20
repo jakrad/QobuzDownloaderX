@@ -129,7 +129,7 @@ namespace QobuzDownloaderX.Helpers
                     {
                         SizeMode = PictureBoxSizeMode.StretchImage
                     };
-                    BeginLoadArtwork(artwork, album.Image?.Large?.ToString());
+                    try { artwork.Load(album.Image.Large.ToString()); /* Using the thumbnail URL */ } catch { artwork.Image = Resources.qbdlx_new; /* Use QBDLX Icon as fallback */ }
                     artwork.Width = 65;
                     artwork.Height = 65;
                     artwork.Anchor = AnchorStyles.None; // Center both horizontally and vertically
@@ -344,7 +344,8 @@ namespace QobuzDownloaderX.Helpers
                     {
                         SizeMode = PictureBoxSizeMode.StretchImage
                     };
-                    BeginLoadArtwork(artwork, track.Album?.Image?.Large?.ToString());
+                    try { artwork.Load(track.Album.Image.Large.ToString()); /* Using the thumbnail URL */ }
+                    catch { artwork.Image = Resources.qbdlx_new; /* Use QBDLX Icon as fallback */ }
                     artwork.Width = 65;
                     artwork.Height = 65;
                     artwork.Anchor = AnchorStyles.None; // Center both horizontally and vertically
@@ -529,37 +530,10 @@ namespace QobuzDownloaderX.Helpers
             }
             else if (control is PictureBox pictureBox)
             {
-                if (!ReferenceEquals(pictureBox.Image, Resources.qbdlx_new))
-                {
-                    pictureBox.Image?.Dispose();
-                }
+                pictureBox.Image?.Dispose();
             }
 
             control.Dispose();
-        }
-
-        private static void BeginLoadArtwork(PictureBox artwork, string imageUrl)
-        {
-            if (artwork == null) return;
-
-            artwork.WaitOnLoad = false;
-            artwork.InitialImage = Resources.qbdlx_new;
-            artwork.ErrorImage = Resources.qbdlx_new;
-            artwork.Image = Resources.qbdlx_new;
-
-            if (string.IsNullOrWhiteSpace(imageUrl))
-            {
-                return;
-            }
-
-            try
-            {
-                artwork.LoadAsync(imageUrl);
-            }
-            catch
-            {
-                artwork.Image = Resources.qbdlx_new;
-            }
         }
 
         /// <summary>

@@ -18,7 +18,6 @@ using System.Security.Principal;
 using System.Text;
 using System.Xml.Linq;
 using System.Diagnostics;
-using QobuzDownloaderX.Helpers;
 
 /// <summary>
 /// A settings provider that stores application settings in a configurable directory and filename.
@@ -91,7 +90,7 @@ public class FlexibleSettingsProvider : SettingsProvider
     /// <summary>
     /// Gets the fully qualified configuration file path (directory + filename).
     /// </summary>
-    public string ConfigFileFullName => Path.Combine(GetPreferredConfigDirectory(), ConfigFileName);
+    public string ConfigFileFullName => Path.Combine(ConfigDirectoryPath, ConfigFileName);
 
     #endregion
 
@@ -147,7 +146,13 @@ public class FlexibleSettingsProvider : SettingsProvider
     {
         var values = new SettingsPropertyValueCollection();
         XDocument doc = null;
-        string configPath = GetExistingConfigPath();
+        string configPath = ConfigFileFullName;
+
+        // If ConfigDirectoryPath is ".", combine with current directory explicitly.
+        if (ConfigDirectoryPath == ".")
+        {
+            configPath = Path.Combine(Directory.GetCurrentDirectory(), ConfigFileName);
+        }
 
         if (File.Exists(configPath))
         {
@@ -195,7 +200,9 @@ public class FlexibleSettingsProvider : SettingsProvider
     /// <param name="values">Collection of Setting values to persist.</param>
     public override void SetPropertyValues(SettingsContext context, SettingsPropertyValueCollection values)
     {
-        string targetDirectory = EnsureConfigDirectory();
+        EnsureConfigDirectory();
+
+        string targetDirectory = ConfigDirectoryPath == "." ? Directory.GetCurrentDirectory() : ConfigDirectoryPath;
         string targetPath = Path.Combine(targetDirectory, ConfigFileName);
 
         var root = new XElement("settings");
@@ -388,9 +395,9 @@ public class FlexibleSettingsProvider : SettingsProvider
     /// If the configured directory fails, falls back to LocalApplicationData.
     /// Throws InvalidOperationException when no writable directory can be found.
     /// </summary>
-    private string EnsureConfigDirectory()
+    private void EnsureConfigDirectory()
     {
-        string tempConfigDirectoryPath = GetPreferredConfigDirectory();
+        string tempConfigDirectoryPath = ConfigDirectoryPath == "." ? Directory.GetCurrentDirectory() : ConfigDirectoryPath;
 
         if (string.IsNullOrWhiteSpace(tempConfigDirectoryPath))
         {
@@ -417,49 +424,12 @@ public class FlexibleSettingsProvider : SettingsProvider
 
         if (!CanWriteToDirectory(tempConfigDirectoryPath))
         {
-            if (!tempConfigDirectoryPath.Equals(ConfigDirectoryPathFallback, StringComparison.OrdinalIgnoreCase))
-            {
+            if (tempConfigDirectoryPath != ConfigDirectoryPathFallback)
                 tempConfigDirectoryPath = ConfigDirectoryPathFallback;
-                Directory.CreateDirectory(tempConfigDirectoryPath);
-            }
 
             if (!CanWriteToDirectory(tempConfigDirectoryPath))
                 throw new InvalidOperationException($"Cannot write application's configuration file in directory: {tempConfigDirectoryPath}. Check user permissions.");
         }
-
-        return tempConfigDirectoryPath;
-    }
-
-    private string GetPreferredConfigDirectory()
-    {
-        string configuredDirectory = ConfigDirectoryPath?.Trim();
-
-        if (string.IsNullOrWhiteSpace(configuredDirectory)
-            || configuredDirectory == "."
-            || configuredDirectory == @".\"
-            || configuredDirectory == "./")
-        {
-            return ConfigDirectoryPathFallback;
-        }
-
-        return configuredDirectory;
-    }
-
-    private string GetExistingConfigPath()
-    {
-        string primaryPath = Path.Combine(GetPreferredConfigDirectory(), ConfigFileName);
-        if (File.Exists(primaryPath))
-        {
-            return primaryPath;
-        }
-
-        string legacyPath = Path.Combine(Directory.GetCurrentDirectory(), ConfigFileName);
-        if (!primaryPath.Equals(legacyPath, StringComparison.OrdinalIgnoreCase) && File.Exists(legacyPath))
-        {
-            return legacyPath;
-        }
-
-        return primaryPath;
     }
 
     #endregion
