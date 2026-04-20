@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace QobuzDownloaderX.Helpers
 {
@@ -12,19 +13,33 @@ namespace QobuzDownloaderX.Helpers
         public void fixMD5(string filePath, string flacEXEPath)
         {
             qbdlxForm._qbdlxForm.logger.Debug("Attempting to fix unset MD5…");
-            // string driveLetter = filePath.Substring(0, 2); // UNUSED
-            string cmdText = "/C echo Fixing unset MD5s... & \"" + flacEXEPath + "\" -f8 \"" + filePath + "\"";
-            qbdlxForm._qbdlxForm.logger.Debug("Commands - " + cmdText);
 
             try
             {
-                qbdlxForm._qbdlxForm.logger.Debug("Running CMD command to fix MD5…");
-                Process cmd = new Process();
-                cmd.StartInfo.FileName = "cmd.exe";
-                cmd.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                cmd.StartInfo.Arguments = cmdText;
-                cmd.Start();
-                cmd.WaitForExit();
+                string flacExecutablePath = SecurityHelpers.ResolveExecutablePath(flacEXEPath);
+                qbdlxForm._qbdlxForm.logger.Debug("Running FLAC command directly to fix MD5…");
+
+                using (Process cmd = new Process())
+                {
+                    cmd.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = flacExecutablePath,
+                        Arguments = $"-f8 \"{filePath}\"",
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        WorkingDirectory = Path.GetDirectoryName(flacExecutablePath)
+                    };
+
+                    cmd.Start();
+                    cmd.WaitForExit();
+
+                    if (cmd.ExitCode != 0)
+                    {
+                        throw new InvalidOperationException($"flac exited with code {cmd.ExitCode}.");
+                    }
+                }
+
                 outputResult = "COMPLETE";
                 qbdlxForm._qbdlxForm.logger.Debug("MD5 has been fixed for file!");
             }

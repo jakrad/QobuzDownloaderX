@@ -45,8 +45,10 @@ namespace QobuzDownloaderX
             }
         }
 
-        private async Task DownloadGoodiesAsync(string downloadPath, Album album, CancellationToken abortToken)
+        private async Task<bool> DownloadGoodiesAsync(string downloadPath, Album album, CancellationToken abortToken)
         {
+            bool allSuccessful = true;
+
             foreach (var goody in album.Goodies)
             {
                 try
@@ -57,6 +59,7 @@ namespace QobuzDownloaderX
                 {
                     qbdlxForm._qbdlxForm.logger.Warning("No URL found for the goody, skipping.");
                     getInfo.updateDownloadOutput($"\r\n{qbdlxForm._qbdlxForm.downloadOutputGoodyNoURL}\r\n");
+                    allSuccessful = false;
                     continue;
                 }
 
@@ -65,20 +68,26 @@ namespace QobuzDownloaderX
                 catch
                 {
                     qbdlxForm._qbdlxForm.logger.Warning("No goodies found or failed to download");
+                    allSuccessful = false;
                 }
             }
+
+            return allSuccessful;
         }
 
-        internal async Task DownloadTracksAsync(string app_id, string album_id, string format_id, string audio_format, string user_auth_token, string app_secret, string downloadLocation, string artistTemplate, string albumTemplate, string trackTemplate, Album album, IProgress<int> progress, IProgress<(int current, int total)> trackCounter, DownloadStats stats, CancellationToken abortToken)
+        internal async Task<bool> DownloadTracksAsync(string app_id, string album_id, string format_id, string audio_format, string user_auth_token, string app_secret, string downloadLocation, string artistTemplate, string albumTemplate, string trackTemplate, Album album, IProgress<int> progress, IProgress<(int current, int total)> trackCounter, DownloadStats stats, CancellationToken abortToken)
         {
             int totalTracks = album.Tracks.Items.Count;
             int trackIndex = 0;
+            bool allSuccessful = true;
+            bool albumSkipped = false;
 
             foreach (var item in album.Tracks.Items)
             {
                 if (abortToken.IsCancellationRequested) { abortToken.ThrowIfCancellationRequested(); }
                 if (qbdlxForm.skipCurrentAlbum) {
                     qbdlxForm.skipCurrentAlbum = false;
+                    albumSkipped = true;
                     qbdlxForm._qbdlxForm.logger.Debug("Skipping current album by user");
                     getInfo.updateDownloadOutput(qbdlxForm._qbdlxForm.albumSkipped);
                     break; }
@@ -97,16 +106,21 @@ namespace QobuzDownloaderX
                     });
 
                     var trackInfo = QoService.TrackGetWithAuth(app_id, item.Id.ToString(), user_auth_token);
-                    await downloadTrack.DownloadTrackAsync(
+                    bool trackSucceeded = await downloadTrack.DownloadTrackAsync(
                         "album", app_id, album_id, format_id, audio_format, 
                         user_auth_token, app_secret, downloadLocation, artistTemplate, albumTemplate, 
                         trackTemplate, album, trackInfo, trackProgress, stats, abortToken);
+                    if (!trackSucceeded)
+                    {
+                        allSuccessful = false;
+                    }
 
                 }
                 catch (Exception ex)
                 {
                     qbdlxForm._qbdlxForm.logger.Error($"Track {item.Id} failed: {ex}");
                     getInfo.updateDownloadOutput($"\r\n{ex}");
+                    allSuccessful = false;
                 }
                 finally
                 {
@@ -120,9 +134,10 @@ namespace QobuzDownloaderX
                 }
             }
             qbdlxForm.skipCurrentAlbum = false;
+            return allSuccessful && !albumSkipped;
         }
 
-        internal async Task DownloadAlbumAsync(string app_id, string album_id, string format_id, string audio_format, string user_auth_token, string app_secret, string downloadLocation, string artistTemplate, string albumTemplate, string trackTemplate, Album QoAlbum, IProgress<int> progress, IProgress<(int current, int total)> trackCounter, DownloadStats stats, CancellationToken abortToken)
+        internal async Task<bool> DownloadAlbumAsync(string app_id, string album_id, string format_id, string audio_format, string user_auth_token, string app_secret, string downloadLocation, string artistTemplate, string albumTemplate, string trackTemplate, Album QoAlbum, IProgress<int> progress, IProgress<(int current, int total)> trackCounter, DownloadStats stats, CancellationToken abortToken)
         {
             qbdlxForm._qbdlxForm.logger.Debug("Starting album download (downloadAlbum)");
 
@@ -139,9 +154,8 @@ namespace QobuzDownloaderX
                     qbdlxForm._qbdlxForm.logger.Debug("Streamable tag is set to false on Qobuz, and streamable check is enabled, skipping download");
                     getInfo.updateDownloadOutput(qbdlxForm._qbdlxForm.downloadOutputAlNotStream);
                     Miscellaneous.LogNotStreamableAlbumEntry(downloadLocation, QoAlbum, qbdlxForm._qbdlxForm.downloadOutputAlNotStream);
-                    getInfo.updateDownloadOutput("\r\n" + qbdlxForm._qbdlxForm.downloadOutputCompleted);
                     progress?.Report(100);
-                    return;
+                    return false;
                 }
                 else
                 {
@@ -154,7 +168,7 @@ namespace QobuzDownloaderX
             {
                 // Find the how many characters are needed for padding
                 paddedTrackLength = padNumber.padTracks(QoAlbum);
-                paddedDiscLength = padNumber.padTracks(QoAlbum);
+                paddedDiscLength = padNumber.padDiscs(QoAlbum);
 
                 // Set download path
                 downloadPath = await downloadFile.createPath(downloadLocation, artistTemplate, albumTemplate, trackTemplate, null, null, paddedTrackLength, paddedDiscLength, QoAlbum, null, null);
@@ -165,7 +179,7 @@ namespace QobuzDownloaderX
                 if (abortToken.IsCancellationRequested) { abortToken.ThrowIfCancellationRequested(); }
 
                 // Download tracks
-                await DownloadTracksAsync(
+                bool tracksSucceeded = await DownloadTracksAsync(
                     app_id, album_id, format_id, audio_format, user_auth_token, app_secret, downloadLocation, 
                     artistTemplate, albumTemplate, trackTemplate, QoAlbum, progress, trackCounter, stats, abortToken);
 
@@ -175,13 +189,14 @@ namespace QobuzDownloaderX
                 getInfo.outputText = qbdlxForm._qbdlxForm.downloadOutput.Text;
 
                 // Download goodies
+                bool goodiesSucceeded = true;
                 if (abortToken.IsCancellationRequested) { 
                     abortToken.ThrowIfCancellationRequested(); 
                 } else
                 {
                     if (Settings.Default.downloadGoodies)
                     {
-                        await DownloadGoodiesAsync(downloadPath, QoAlbum, abortToken);
+                        goodiesSucceeded = await DownloadGoodiesAsync(downloadPath, QoAlbum, abortToken);
                     }
                 }
 
@@ -196,12 +211,13 @@ namespace QobuzDownloaderX
                 qbdlxForm._qbdlxForm.logger.Debug("All downloads completed!");
 
                 progress?.Report(100);
+                return tracksSucceeded && goodiesSucceeded;
             }
             catch (Exception downloadAlbumEx)
             {
                 qbdlxForm._qbdlxForm.logger.Error("Error occured during downloadAlbum, error below:\r\n" + downloadAlbumEx);
                 Debug.WriteLine(downloadAlbumEx);
-                return;
+                return false;
             }
             finally
             {

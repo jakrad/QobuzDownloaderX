@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -12,6 +13,7 @@ namespace QobuzDownloaderX.Helpers
     internal sealed class TranslationUpdater
     {
         internal static readonly TimeSpan updateCheckTimeout = TimeSpan.FromSeconds(30);
+        private const int maxTranslationFileCharacters = 256 * 1024;
 
         static readonly Regex removeTimezoneRegEx = new Regex(@"[A-Z]{2,5}(\+?\d{0,2})?$", RegexOptions.Compiled);
 
@@ -30,13 +32,16 @@ namespace QobuzDownloaderX.Helpers
         public static string NormalizeDate(string dateStr)
         {
             // Remove any alphabetic timezone part
-            return removeTimezoneRegEx.Replace(dateStr, "").Trim();
+            return removeTimezoneRegEx.Replace(dateStr ?? string.Empty, "").Trim();
         }
 
         public static async Task CheckAndUpdateLanguageFiles()
         {
             try
             {
+                string localLanguagesDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "languages");
+                ZlpIOHelper.CreateDirectory(localLanguagesDirectory);
+
                 using (HttpClient client = new HttpClient() { Timeout = updateCheckTimeout })
                 {
                     client.DefaultRequestHeaders.Add("User-Agent", "TranslationUpdater");
@@ -44,9 +49,9 @@ namespace QobuzDownloaderX.Helpers
                     foreach (var languageFile in LanguageFiles)
                     {
                         string fileName = languageFile.Key;
-                        string localFilePath = languageFile.Value;
+                        string localFilePath = Path.Combine(localLanguagesDirectory, fileName.ToLowerInvariant());
 
-                        string apiUrl = $"https://api.github.com/repos/ImAiiR/QobuzDownloaderX/contents/QobuzDownloaderX/Resources/{localFilePath}";
+                        string apiUrl = $"https://api.github.com/repos/ImAiiR/QobuzDownloaderX/contents/QobuzDownloaderX/Resources/{languageFile.Value}";
 
                         try
                         {
@@ -60,17 +65,23 @@ namespace QobuzDownloaderX.Helpers
                                 string downloadUrl = fileMetadata["download_url"]?.ToString();
                                 if (!string.IsNullOrEmpty(downloadUrl))
                                 {
+                                    Uri downloadUri = SecurityHelpers.RequireHttpsUrl(downloadUrl, $"Translation update for {fileName}", SecurityHelpers.IsAllowedGitHubContentHost);
+
                                     // Fetch the remote file content
-                                    string remoteContent = await client.GetStringAsync(downloadUrl);
+                                    string remoteContent = await client.GetStringAsync(downloadUri);
+                                    if (remoteContent.Length > maxTranslationFileCharacters)
+                                    {
+                                        throw new InvalidOperationException($"Remote translation file '{fileName}' exceeded the maximum accepted size.");
+                                    }
 
                                     // Parse the "TranslationUpdatedOn" field from the remote file
                                     JObject remoteJson = JObject.Parse(remoteContent);
                                     string remoteUpdatedOnString = remoteJson["TranslationUpdatedOn"]?.ToString();
 
                                     // Parse the local file's "TranslationUpdatedOn" field
-                                    if (ZlpIOHelper.FileExists(localFilePath.ToLower()))
+                                    if (ZlpIOHelper.FileExists(localFilePath))
                                     {
-                                        string localContent = ZlpIOHelper.ReadAllText(localFilePath.ToLower());
+                                        string localContent = ZlpIOHelper.ReadAllText(localFilePath);
                                         JObject localJson = JObject.Parse(localContent);
                                         string localUpdatedOnString = localJson["TranslationUpdatedOn"]?.ToString();
 
@@ -80,7 +91,7 @@ namespace QobuzDownloaderX.Helpers
                                         {
                                             if (remoteDate > localDate)
                                             {
-                                                ZlpIOHelper.WriteAllText(localFilePath.ToLower(), remoteContent);
+                                                ZlpIOHelper.WriteAllText(localFilePath, remoteContent);
                                                 qbdlxForm._qbdlxForm.logger.Debug($"File {fileName} updated successfully.");
                                             }
                                             else
@@ -96,7 +107,7 @@ namespace QobuzDownloaderX.Helpers
                                     else
                                     {
                                         // Local file does not exist, download it
-                                        ZlpIOHelper.WriteAllText(localFilePath.ToLower(), remoteContent);
+                                        ZlpIOHelper.WriteAllText(localFilePath, remoteContent);
                                         qbdlxForm._qbdlxForm.logger.Debug($"File {fileName} downloaded successfully.");
                                     }
                                 }
@@ -151,6 +162,7 @@ namespace QobuzDownloaderX.Helpers
                     qbdlxForm._qbdlxForm.logger.Debug("Requesting latest GitHub release");
                     var versionUrl = "https://api.github.com/repos/ImAiiR/QobuzDownloaderX/releases/latest";
                     var response = await httpClient.GetAsync(versionUrl);
+                    response.EnsureSuccessStatusCode();
                     string responseString = await response.Content.ReadAsStringAsync();
 
                     // Parse the JSON response
@@ -165,8 +177,11 @@ namespace QobuzDownloaderX.Helpers
                     currentVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
                     // Compare versions numerically
-                    var newVersionObj = new Version(newVersion?.TrimStart('v')); // Remove leading 'v' if present
-                    var currentVersionObj = new Version(currentVersion);
+                    if (!Version.TryParse(newVersion?.TrimStart('v'), out Version newVersionObj) ||
+                        !Version.TryParse(currentVersion, out Version currentVersionObj))
+                    {
+                        throw new InvalidOperationException("Unable to parse version information returned by GitHub.");
+                    }
 
                     isUpdateAvailable = newVersionObj > currentVersionObj;
 

@@ -45,7 +45,8 @@ namespace QobuzDownloaderX.Helpers
 
         private void WriteLog(string level, string message)
         {
-            var logMessage = $"[{DateTime.Now}] [{level}] {message}";
+            string sanitizedMessage = SecurityHelpers.RedactSensitiveData(message);
+            var logMessage = $"[{DateTime.Now}] [{level}] {sanitizedMessage}";
 
             lock (_lock) // Thread-safety
             {
@@ -60,7 +61,7 @@ namespace QobuzDownloaderX.Helpers
                     this.RotateToNewLogFileIfNeeded();
 
                     // Write to console immediately
-                    System.Diagnostics.Debug.WriteLine($"{level} | {message}");
+                    System.Diagnostics.Debug.WriteLine($"{level} | {sanitizedMessage}");
 
                     // Add to buffer
                     _buffer.AppendLine(logMessage);
