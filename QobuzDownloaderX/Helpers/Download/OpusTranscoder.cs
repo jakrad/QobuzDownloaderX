@@ -75,10 +75,13 @@ namespace QobuzDownloaderX.Helpers.Download
 
             using (var p = new Process())
             {
+                // Route through cmd.exe so ffmpeg gets a proper console environment.
+                // Direct UseShellExecute=false spawn from a WinForms process gives
+                // ffmpeg null stdio handles which causes an immediate crash.
                 p.StartInfo = new ProcessStartInfo
                 {
-                    FileName = ffmpegExe,
-                    Arguments = args,
+                    FileName = "cmd.exe",
+                    Arguments = $"/c \"{ffmpegExe}\" {args}",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardInput = true,
@@ -87,7 +90,7 @@ namespace QobuzDownloaderX.Helpers.Download
                 };
 
                 p.Start();
-                p.StandardInput.Close(); // prevent ffmpeg from blocking on stdin
+                p.StandardInput.Close();
 
                 var stdoutTask = p.StandardOutput.ReadToEndAsync();
                 string stderr = await p.StandardError.ReadToEndAsync();
