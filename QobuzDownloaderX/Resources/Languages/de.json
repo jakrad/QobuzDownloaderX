@@ -49,6 +49,7 @@
     "templatesLabel":               "VORLAGEN",
     "templatesListLabel":           "VORLAGEN LISTE",
     "themeLabel":                   "Aktuelles Theme",
+    "fontLabel":                    "Aktuelle Schriftart",
     "themeSectionLabel":            "VISUELLE OPTIONEN", // AI translation
     "trackTemplateLabel":           "(STANDARD) TRACK-VORLAGE", // AI translation
     "vaTrackTemplateLabel":         "(V/A) TRACK-VORLAGE", // AI translation

@@ -386,6 +386,14 @@ namespace QobuzDownloaderX.Helpers
             f.themeName = Settings.Default.currentTheme;
             if (!string.IsNullOrEmpty(f.themeName)) { f.themeComboBox.SelectedItem = f.themeName; }
             f.theme = f._themeManager._currentTheme;
+
+            // Populate and restore font selector
+            string[] fonts = { "Nirmala UI", "JetBrainsMono NF", "Consolas", "Cascadia Code", "Segoe UI" };
+            f.fontComboBox.Items.Clear();
+            f.fontComboBox.Items.AddRange(fonts);
+            string savedFont = Settings.Default.font;
+            int fontIdx = Array.IndexOf(fonts, savedFont);
+            f.fontComboBox.SelectedIndex = fontIdx >= 0 ? fontIdx : 0;
         }
 
         internal static void InitializeLanguage(qbdlxForm f)
@@ -404,12 +412,14 @@ namespace QobuzDownloaderX.Helpers
 
         private static void UpdateUILanguage(qbdlxForm f)
         {
-            // Load the font name from the translation file
-            string fontName = f.languageManager.GetTranslation("TranslationFont");
+            // Prefer user-saved font; fall back to language file's TranslationFont
+            string savedFont = Settings.Default.font;
+            string fontName = !string.IsNullOrEmpty(savedFont)
+                ? savedFont
+                : f.languageManager.GetTranslation("TranslationFont");
 
             if (!string.IsNullOrEmpty(fontName))
             {
-                // Call method to update fonts
                 f.languageManager.UpdateControlFont(f.Controls, fontName);
             }
 
@@ -475,6 +485,7 @@ namespace QobuzDownloaderX.Helpers
             f.templatesLabel.Text = f.languageManager.GetTranslation("templatesLabel");
             f.templatesListLabel.Text = f.languageManager.GetTranslation("templatesListLabel");
             f.themeLabel.Text = f.languageManager.GetTranslation("themeLabel");
+            f.fontLabel.Text = f.languageManager.GetTranslation("fontLabel");
             f.themeSectionLabel.Text = f.languageManager.GetTranslation("themeSectionLabel");
             f.downloadFromArtistLabel.Text = f.languageManager.GetTranslation("downloadFromArtistLabel");
             f.trackTemplateLabel.Text = f.languageManager.GetTranslation("trackTemplateLabel");

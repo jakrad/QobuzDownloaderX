@@ -49,6 +49,7 @@
     "templatesLabel":               "TEMPLATES",
     "templatesListLabel":           "TEMPLATES LIST",
     "themeLabel":                   "Current Theme",
+    "fontLabel":                    "Current Font",
     "themeSectionLabel":            "VISUAL OPTIONS",
     "trackTemplateLabel":           "(DEFAULT) TRACK TEMPLATE",
     "vaTrackTemplateLabel":         "(V/A) TRACK TEMPLATE",

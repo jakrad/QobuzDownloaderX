@@ -49,6 +49,7 @@
     "templatesLabel":               "模板",
     "templatesListLabel":           "模板列表",
     "themeLabel":                   "当前主题",
+    "fontLabel":                    "当前字体",
     "themeSectionLabel":            "视觉选项", // AI translation
     "trackTemplateLabel":           "(默认) 曲目模板", // AI translation
     "vaTrackTemplateLabel":         "(V/A) 曲目模板", // AI translation

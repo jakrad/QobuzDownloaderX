@@ -433,6 +433,18 @@ namespace QobuzDownloaderX.Properties {
 
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Nirmala UI")]
+        public string font {
+            get {
+                return ((string)(this["font"]));
+            }
+            set {
+                this["font"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string savedUserID {
             get {

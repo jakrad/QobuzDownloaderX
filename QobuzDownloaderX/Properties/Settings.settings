@@ -236,5 +236,8 @@
     <Setting Name="opusBitrate" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">192</Value>
     </Setting>
+    <Setting Name="font" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Nirmala UI</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

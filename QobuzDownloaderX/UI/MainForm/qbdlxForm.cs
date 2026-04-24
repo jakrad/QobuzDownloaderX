@@ -993,6 +993,15 @@ namespace QobuzDownloaderX
             _themeManager.ApplyTheme(this);
         }
 
+        private void fontComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string selectedFont = fontComboBox.SelectedItem.ToString();
+            Settings.Default.font = selectedFont;
+            Settings.Default.Save();
+            if (languageManager != null)
+                languageManager.UpdateControlFont(Controls, selectedFont);
+        }
+
         private void languageComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             // Save the selected language to settings

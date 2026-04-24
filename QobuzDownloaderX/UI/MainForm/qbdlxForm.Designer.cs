@@ -169,6 +169,8 @@ namespace QobuzDownloaderX
             this.downloadAllFromArtistCheckBox = new System.Windows.Forms.CheckBox();
             this.themeLabel = new System.Windows.Forms.Label();
             this.themeComboBox = new System.Windows.Forms.ComboBox();
+            this.fontLabel = new System.Windows.Forms.Label();
+            this.fontComboBox = new System.Windows.Forms.ComboBox();
             this.themeSectionLabel = new System.Windows.Forms.Label();
             this.commentCheckBox = new System.Windows.Forms.CheckBox();
             this.commentTextBox = new System.Windows.Forms.TextBox();
@@ -1326,6 +1328,8 @@ namespace QobuzDownloaderX
             this.extraSettingsPanel.Controls.Add(this.downloadAllFromArtistCheckBox);
             this.extraSettingsPanel.Controls.Add(this.themeLabel);
             this.extraSettingsPanel.Controls.Add(this.themeComboBox);
+            this.extraSettingsPanel.Controls.Add(this.fontLabel);
+            this.extraSettingsPanel.Controls.Add(this.fontComboBox);
             this.extraSettingsPanel.Controls.Add(this.themeSectionLabel);
             this.extraSettingsPanel.Controls.Add(this.commentCheckBox);
             this.extraSettingsPanel.Controls.Add(this.commentTextBox);
@@ -2163,7 +2167,29 @@ namespace QobuzDownloaderX
             this.themeComboBox.Size = new System.Drawing.Size(127, 21);
             this.themeComboBox.TabIndex = 19;
             this.themeComboBox.SelectedIndexChanged += new System.EventHandler(this.themeComboBox_SelectedIndexChanged);
-            // 
+            //
+            // fontLabel
+            //
+            this.fontLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(147)))), ((int)(((byte)(147)))), ((int)(((byte)(147)))));
+            this.fontLabel.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.fontLabel.Location = new System.Drawing.Point(25, 550);
+            this.fontLabel.Name = "fontLabel";
+            this.fontLabel.Size = new System.Drawing.Size(219, 19);
+            this.fontLabel.TabIndex = 20;
+            this.fontLabel.Text = "Current Font";
+            this.fontLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //
+            // fontComboBox
+            //
+            this.fontComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.fontComboBox.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.fontComboBox.FormattingEnabled = true;
+            this.fontComboBox.Location = new System.Drawing.Point(250, 548);
+            this.fontComboBox.Name = "fontComboBox";
+            this.fontComboBox.Size = new System.Drawing.Size(127, 21);
+            this.fontComboBox.TabIndex = 21;
+            this.fontComboBox.SelectedIndexChanged += new System.EventHandler(this.fontComboBox_SelectedIndexChanged);
+            //
             // themeSectionLabel
             // 
             this.themeSectionLabel.Font = new System.Drawing.Font("Nirmala UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -3197,6 +3223,8 @@ namespace QobuzDownloaderX
         internal System.Windows.Forms.Label themeSectionLabel;
         internal System.Windows.Forms.Label themeLabel;
         internal System.Windows.Forms.ComboBox themeComboBox;
+        internal System.Windows.Forms.Label fontLabel;
+        internal System.Windows.Forms.ComboBox fontComboBox;
         internal System.Windows.Forms.Label languageLabel;
         internal System.Windows.Forms.ComboBox languageComboBox;
         internal System.Windows.Forms.FlowLayoutPanel taggingOptionsPanel;
