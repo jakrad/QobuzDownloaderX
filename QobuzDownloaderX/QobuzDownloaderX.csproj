@@ -108,6 +108,7 @@
     <Compile Include="Helpers\Download\DownloadTrack.cs" />
     <Compile Include="Helpers\Download\DownloadAlbum.cs" />
     <Compile Include="Helpers\Download\DownloadFile.cs" />
+    <Compile Include="Helpers\Download\OpusTranscoder.cs" />
     <Compile Include="Helpers\Miscellaneous.cs" />
     <Compile Include="Helpers\QobuzDownloaderXMOD\InvolvedPersonRoleMapping.cs" />
     <Compile Include="Helpers\QobuzDownloaderXMOD\InvolvedPersonRoleType.cs" />

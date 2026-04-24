@@ -230,5 +230,11 @@
     <Setting Name="cleanTitleTagText" Type="System.String" Scope="User">
       <Value Profile="(Default)"> (Clean)</Value>
     </Setting>
+    <Setting Name="opusOutputEnabled" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="opusBitrate" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">192</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
