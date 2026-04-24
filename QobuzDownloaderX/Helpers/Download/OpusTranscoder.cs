@@ -68,7 +68,7 @@ namespace QobuzDownloaderX.Helpers.Download
 
             string ffmpegExe = ResolveFfmpegExe();
             string args = $"-y -i \"{flacPath}\" -c:a libopus -b:a {bitrateKbps}k -vbr on"
-                        + $" -map_metadata 0 -map 0:a -map 0:v? \"{opusPath}\"";
+                        + $" -map_metadata 0 -map 0:a \"{opusPath}\"";
 
             qbdlxForm._qbdlxForm.logger.Debug($"ffmpeg path: {ffmpegExe}");
             qbdlxForm._qbdlxForm.logger.Debug($"ffmpeg transcode: {args}");
