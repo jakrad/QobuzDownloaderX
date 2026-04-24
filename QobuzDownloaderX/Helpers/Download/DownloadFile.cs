@@ -1,4 +1,5 @@
 ﻿using QobuzDownloaderX.Helpers;
+using QobuzDownloaderX.Helpers.Download;
 using QobuzDownloaderX.Properties;
 using QopenAPI;
 using System;
@@ -233,6 +234,19 @@ namespace QobuzDownloaderX
 
                 qbdlxForm._qbdlxForm.logger.Debug("Starting file metadata tagging");
                 TagFile.WriteToFile(tempFile, embeddedArtworkPath, QoAlbum, QoItem);
+
+                // Transcode to Opus if enabled (FLAC source only)
+                if (Settings.Default.opusOutputEnabled && audio_format.Contains("flac"))
+                {
+                    qbdlxForm._qbdlxForm.logger.Debug("Opus output enabled, transcoding…");
+                    qbdlxForm._qbdlxForm.BeginInvoke(new Action(() =>
+                        qbdlxForm._qbdlxForm.progressLabel.Text = $"{qbdlxForm._qbdlxForm.progressLabelActive} - Transcoding…"));
+
+                    string opusTempFile = await OpusTranscoder.TranscodeAsync(tempFile, Settings.Default.opusBitrate, abortToken);
+                    File.Delete(tempFile);
+                    tempFile = opusTempFile;
+                    filePath = Path.ChangeExtension(filePath, ".opus");
+                }
 
                 // Move the file to final destination
                 qbdlxForm._qbdlxForm.logger.Debug("Moving temp file to - " + filePath);
