@@ -81,7 +81,10 @@ namespace QobuzDownloaderX.Helpers.Download
                 p.StartInfo = new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
-                    Arguments = $"/c \"{ffmpegExe}\" {args}",
+                    // cmd /c strips the first and last " from the argument when it
+                    // starts with ". Wrapping in an extra pair of outer quotes means
+                    // cmd strips those and leaves the inner quoted path intact.
+                    Arguments = $"/c \"\"{ffmpegExe}\" {args}\"",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardInput = true,
