@@ -197,12 +197,21 @@ namespace QobuzDownloaderX.Helpers
             f.flacMidButton2.Checked = Settings.Default.quality3;
             f.flacHighButton2.Checked = Settings.Default.quality4;
 
+            f.opusOutputCheckBox.Checked = Settings.Default.opusOutputEnabled;
+
+            int[] bitrates = { 96, 128, 160, 192, 256, 320 };
+            int savedBitrate = Settings.Default.opusBitrate;
+            int bitrateIdx = Array.IndexOf(bitrates, savedBitrate);
+            f.opusBitrateComboBox.SelectedIndex = bitrateIdx >= 0 ? bitrateIdx : 3; // default 192
+
             UpdateQualitySelectButtonText(f);
         }
 
         internal static void UpdateQualitySelectButtonText(qbdlxForm f)
         {
             string baseText = f.languageManager?.GetTranslation("qualitySelectButton");
+            bool opus = Settings.Default.opusOutputEnabled;
+            string opusSuffix = opus ? $" → Opus {Settings.Default.opusBitrate}k" : "";
 
             switch (true)
             {
@@ -211,21 +220,20 @@ namespace QobuzDownloaderX.Helpers
                     break;
 
                 case var _ when f.flacLowButton2.Checked:
-                    f.qualitySelectButton.Text = baseText + " (FLAC LOW)";
+                    f.qualitySelectButton.Text = baseText + $" (FLAC LOW{opusSuffix})";
                     break;
 
                 case var _ when f.flacMidButton2.Checked:
-                    f.qualitySelectButton.Text = baseText + " (FLAC MID)";
+                    f.qualitySelectButton.Text = baseText + $" (FLAC MID{opusSuffix})";
                     break;
 
                 case var _ when f.flacHighButton2.Checked:
-                    f.qualitySelectButton.Text = baseText + " (FLAC HIGH)";
+                    f.qualitySelectButton.Text = baseText + $" (FLAC HIGH{opusSuffix})";
                     break;
 
                 default:
                     break;
             }
-
         }
 
         internal static void LoadTaggingSettings(qbdlxForm f)

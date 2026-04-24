@@ -1221,6 +1221,24 @@ namespace QobuzDownloaderX
             Settings.Default.Save();
         }
 
+        private void opusOutputCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            Settings.Default.opusOutputEnabled = opusOutputCheckBox.Checked;
+            Settings.Default.Save();
+            Miscellaneous.UpdateQualitySelectButtonText(this);
+        }
+
+        private void opusBitrateComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int[] bitrates = { 96, 128, 160, 192, 256, 320 };
+            int idx = opusBitrateComboBox.SelectedIndex;
+            if (idx >= 0 && idx < bitrates.Length)
+            {
+                Settings.Default.opusBitrate = bitrates[idx];
+                Settings.Default.Save();
+            }
+        }
+
         private void clearOldLogsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             Settings.Default.clearOldLogs = clearOldLogsCheckBox.Checked;

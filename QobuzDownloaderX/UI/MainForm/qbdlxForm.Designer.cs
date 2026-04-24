@@ -120,6 +120,8 @@ namespace QobuzDownloaderX
             this.clearOldLogsCheckBox = new System.Windows.Forms.CheckBox();
             this.logFailedDownloadsCheckBox = new System.Windows.Forms.CheckBox();
             this.fixMD5sCheckBox = new System.Windows.Forms.CheckBox();
+            this.opusOutputCheckBox = new System.Windows.Forms.CheckBox();
+            this.opusBitrateComboBox = new System.Windows.Forms.ComboBox();
             this.advancedOptionsPanelRight = new System.Windows.Forms.FlowLayoutPanel();
             this.mergeArtistNamesCheckBox = new System.Windows.Forms.CheckBox();
             this.artistNamesSeparatorsPanel = new System.Windows.Forms.Panel();
@@ -1382,6 +1384,8 @@ namespace QobuzDownloaderX
             this.advancedOptionsPanelLeft.Controls.Add(this.clearOldLogsCheckBox);
             this.advancedOptionsPanelLeft.Controls.Add(this.logFailedDownloadsCheckBox);
             this.advancedOptionsPanelLeft.Controls.Add(this.fixMD5sCheckBox);
+            this.advancedOptionsPanelLeft.Controls.Add(this.opusOutputCheckBox);
+            this.advancedOptionsPanelLeft.Controls.Add(this.opusBitrateComboBox);
             this.advancedOptionsPanelLeft.Controls.Add(this.advancedOptionsPanelRight);
             this.advancedOptionsPanelLeft.Controls.Add(this.duplicateFilesFlowLayoutPanel);
             this.advancedOptionsPanelLeft.Location = new System.Drawing.Point(390, 172);
@@ -1485,7 +1489,34 @@ namespace QobuzDownloaderX
             this.fixMD5sCheckBox.Text = "Auto-Fix Unset MD5s (must have FLAC in PATH variables)";
             this.fixMD5sCheckBox.UseVisualStyleBackColor = true;
             this.fixMD5sCheckBox.CheckedChanged += new System.EventHandler(this.fixMD5sCheckBox_CheckedChanged);
-            // 
+            //
+            // opusOutputCheckBox
+            //
+            this.opusOutputCheckBox.AutoSize = true;
+            this.opusOutputCheckBox.Font = new System.Drawing.Font("Nirmala UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.opusOutputCheckBox.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(147)))), ((int)(((byte)(147)))), ((int)(((byte)(147)))));
+            this.opusOutputCheckBox.Location = new System.Drawing.Point(3, 121);
+            this.opusOutputCheckBox.Name = "opusOutputCheckBox";
+            this.opusOutputCheckBox.Size = new System.Drawing.Size(261, 17);
+            this.opusOutputCheckBox.TabIndex = 8;
+            this.opusOutputCheckBox.Text = "Convert to Opus after download (requires ffmpeg in PATH)";
+            this.opusOutputCheckBox.UseVisualStyleBackColor = true;
+            this.opusOutputCheckBox.CheckedChanged += new System.EventHandler(this.opusOutputCheckBox_CheckedChanged);
+            //
+            // opusBitrateComboBox
+            //
+            this.opusBitrateComboBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.opusBitrateComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.opusBitrateComboBox.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.opusBitrateComboBox.Font = new System.Drawing.Font("Nirmala UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.opusBitrateComboBox.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(147)))), ((int)(((byte)(147)))), ((int)(((byte)(147)))));
+            this.opusBitrateComboBox.Items.AddRange(new object[] { "96 kbps", "128 kbps", "160 kbps", "192 kbps", "256 kbps", "320 kbps" });
+            this.opusBitrateComboBox.Location = new System.Drawing.Point(3, 144);
+            this.opusBitrateComboBox.Name = "opusBitrateComboBox";
+            this.opusBitrateComboBox.Size = new System.Drawing.Size(100, 21);
+            this.opusBitrateComboBox.TabIndex = 9;
+            this.opusBitrateComboBox.SelectedIndexChanged += new System.EventHandler(this.opusBitrateComboBox_SelectedIndexChanged);
+            //
             // advancedOptionsPanelRight
             // 
             this.advancedOptionsPanelRight.AutoScroll = true;
@@ -3145,6 +3176,8 @@ namespace QobuzDownloaderX
         internal System.Windows.Forms.TextBox templatesListTextBox;
         internal System.Windows.Forms.Label templatesListLabel;
         internal System.Windows.Forms.CheckBox fixMD5sCheckBox;
+        internal System.Windows.Forms.CheckBox opusOutputCheckBox;
+        internal System.Windows.Forms.ComboBox opusBitrateComboBox;
         internal System.Windows.Forms.Label movingLabel;
         internal System.Windows.Forms.Button searchButton;
         internal System.Windows.Forms.Panel searchPanel;
