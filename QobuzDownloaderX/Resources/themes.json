@@ -61,6 +61,26 @@
 			"InvertLogo": false
 		},
 
+		"Catppuccin Mocha": {
+			"FormBackground": "#1e1e2e",
+			"MainPanelBackground": "#1e1e2e",
+			"HighlightedButtonBackground": "#cba6f7",
+			"ClickedButtonBackground": "#181825",
+			"ProgressBarFillColor": "#cba6f7",
+			"SelectedRowBackground": "#cba6f7",
+			"SidePanelBackground": "#181825",
+			"ButtonBackground": "#313244",
+			"TextBoxBackground": "#313244",
+			"PlaceholderTextBoxText": "#6c7086",
+			"TextBoxText": "#cdd6f4",
+			"LabelText": "#cdd6f4",
+			"ButtonText": "#cdd6f4",
+			"NavBarIconColor": "#cba6f7",
+			"HiResLabelText": "#cba6f7",
+			"LogoReplaceURL": null,
+			"InvertLogo": false
+		},
+
 		"Blood Moon": {
 			"FormBackground": "#1a0000",
 			"MainPanelBackground": "#1a0000",
