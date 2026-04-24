@@ -523,6 +523,7 @@ namespace QobuzDownloaderX.Helpers
             f.mergeArtistInDirNameCheckBox.Text = f.languageManager.GetTranslation("mergeArtistInDirNameCheckBox");
             f.streamableCheckBox.Text = f.languageManager.GetTranslation("streamableCheckBox");
             f.fixMD5sCheckBox.Text = f.languageManager.GetTranslation("fixMD5sCheckBox");
+            f.opusOutputCheckBox.Text = f.languageManager.GetTranslation("opusOutputCheckBox");
             f.downloadSpeedCheckBox.Text = f.languageManager.GetTranslation("downloadSpeedCheckBox");
             f.sortAscendantCheckBox.Text = f.languageManager.GetTranslation("sortAscendantCheckBox");
             f.downloadGoodiesCheckBox.Text = f.languageManager.GetTranslation("downloadGoodiesCheckBox");

@@ -95,6 +95,7 @@
     "mergeArtistInDirNameCheckBox": "Fusionner aussi dans les noms des répertoires",
     "streamableCheckBox":           "Contrôle du flux",
     "fixMD5sCheckBox":              "Corriger les MD5 non définis (Doit avoir FLAC dans la variable PATH)",
+    "opusOutputCheckBox":           "Convertir en Opus après téléchargement (ffmpeg requis dans PATH)",
     "downloadSpeedCheckBox":        "Afficher la vitesse de téléchargement",
     "sortAscendantCheckBox":        "Croissant",
     "downloadGoodiesCheckBox":      "Télécharger les bonus",

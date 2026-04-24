@@ -95,6 +95,7 @@
     "mergeArtistInDirNameCheckBox": "同时合并到目录名称中", // AI translation
     "streamableCheckBox":           "歌曲流媒体可播性检查",
     "fixMD5sCheckBox":              "自动修复生成 MD5 校验和(必须在 PATH 变量中包含 FLAC)",
+    "opusOutputCheckBox":           "下载后转换为 Opus 格式（需要 PATH 中有 ffmpeg）",
     "downloadSpeedCheckBox":        "显示下载速度",
     "sortAscendantCheckBox":        "升序", // AI translation
     "downloadGoodiesCheckBox":      "下载好礼", // AI translation

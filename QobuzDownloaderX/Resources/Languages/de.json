@@ -95,6 +95,7 @@
     "mergeArtistInDirNameCheckBox": "Auch in Verzeichnisnamen zusammenführen", // AI translation
     "streamableCheckBox":           "Ist Streamfähig Check",
     "fixMD5sCheckBox":              "Nicht gesetzte MD5s setzen (muss FLAC in der PATH Variable haben)",
+    "opusOutputCheckBox":           "Nach dem Download in Opus konvertieren (ffmpeg in PATH erforderlich)",
     "downloadSpeedCheckBox":        "Downloadgeschwindigkeit Anzeigen",
     "sortAscendantCheckBox":        "Aufsteigend", // AI translation
     "downloadGoodiesCheckBox":      "Goodies herunterladen", // AI translation

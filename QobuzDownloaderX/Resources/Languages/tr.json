@@ -95,6 +95,7 @@
     "mergeArtistInDirNameCheckBox": "Dizin adlarında da birleştir", // AI translation
     "streamableCheckBox":           "Oynatılabilirlik Doğrulaması",
     "fixMD5sCheckBox":              "Eklenmemiş MD5 Hash'lerini Otomatik Olarak Ekle (Ortam değişkenlerinde (PATH) FLAC olması gerekli)",
+    "opusOutputCheckBox":           "İndirmeden sonra Opus'a dönüştür (PATH'te ffmpeg gerekli)",
     "downloadSpeedCheckBox":        "İndirme Hızını Göster",
     "sortAscendantCheckBox":        "Artan", // AI translation
     "downloadGoodiesCheckBox":      "İkramları indir", // AI translation

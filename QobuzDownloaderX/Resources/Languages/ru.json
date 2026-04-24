@@ -95,6 +95,7 @@
     "mergeArtistInDirNameCheckBox": "Объединять также в названиях папок",
     "streamableCheckBox":           "Проверять доступность стриминга",
     "fixMD5sCheckBox":              "Автоматически исправлять отсутствующие MD5\n(FLAC должен быть в переменной PATH)",
+    "opusOutputCheckBox":           "Конвертировать в Opus после загрузки (требуется ffmpeg в PATH)",
     "downloadSpeedCheckBox":        "Показывать скорость загрузки",
     "sortAscendantCheckBox":        "По возрастанию",
     "downloadGoodiesCheckBox":      "Загружать дополнительные материалы",
